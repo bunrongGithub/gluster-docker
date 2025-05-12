@@ -1,0 +1,19 @@
+FROM ubuntu:20.04
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        glusterfs-client \
+        rsync \
+        curl \
+        unzip \
+        inotify-tools && \
+    rm -rf /var/lib/apt/lists/*
+
+
+
+COPY gluster-client.sh /gluster-client.sh
+
+
+RUN chmod +x /gluster-client.sh
+
+ENTRYPOINT [ "/gluster-client.sh" ]

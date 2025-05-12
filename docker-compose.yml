@@ -1,0 +1,115 @@
+version: "3.8"
+
+services:
+  gluster-server-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.gluster-server
+    container_name: gluster-server-1
+    privileged: true #Require for GlusterFS
+    hostname: gluster-server-1
+    networks:
+      gluster_net:
+        ipv4_address: 10.10.10.11
+    volumes:
+      - gluster-data-1:/data/brick1
+      # - type: tmpfs
+      #   target: /mnt/storages/security # mount an empty in-memory folder
+    healthcheck:
+      test: ["CMD-SHELL", "gluster volume status gv0 | grep -q 'Online: Y'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  gluster-server-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.gluster-server
+    container_name: gluster-server-2
+    privileged: true
+    hostname: gluster-server-2
+    networks:
+      gluster_net:
+        ipv4_address: 10.10.10.12
+    volumes:
+      - gluster-data-2:/data/brick2
+      # - type: tmpfs
+      #   target: /mnt/storages/security
+    healthcheck:
+      test: ["CMD-SHELL", "gluster volume status gv0 | grep -q 'Online: Y'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  gluster-server-3:
+    build:
+      context: .
+      dockerfile: Dockerfile.gluster-server
+    container_name: gluster-server-3
+    privileged: true
+    hostname: gluster-server-3
+    networks:
+      gluster_net:
+        ipv4_address: 10.10.10.13
+    volumes:
+      - gluster-data-3:/data/brick3
+      # - type: tmpfs
+      #   target: /mnt/storages/security
+    healthcheck:
+      test: ["CMD-SHELL", "gluster volume status gv0 | grep -q 'Online: Y'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  gluster-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.gluster-client
+    container_name: gluster-client
+    privileged: true
+    depends_on:
+      - gluster-server-1
+      - gluster-server-2
+      - gluster-server-3
+    networks:
+      gluster_net:
+        ipv4_address: 10.10.10.31
+    env_file:
+      - .env
+    volumes:
+      - ${STORAGES_FOLDER}:/data-from-host/storages
+    restart: unless-stopped
+  
+  aws-s3:
+    build:
+      context: .
+      dockerfile: Dockerfile.s3sync
+    container_name: aws-s3-sync
+    privileged: true
+    depends_on:
+      - gluster-server-1
+      - gluster-server-2
+      - gluster-server-3
+    env_file:
+      - .env
+    environment:
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    networks:
+      gluster_net:
+        ipv4_address: 10.10.10.50
+    volumes:
+      - gluster-data-1:/mnt/gluster-server-1
+      - gluster-data-2:/mnt/gluster-server-2
+      - gluster-data-3:/mnt/gluster-server-3
+    restart: unless-stopped
+networks:
+  gluster_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.10.0/24
+
+volumes:
+  gluster-data-1:
+  gluster-data-2:
+  gluster-data-3:

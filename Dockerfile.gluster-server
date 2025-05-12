@@ -1,0 +1,20 @@
+FROM ubuntu:20.04
+
+#Install dependencies in a single layer (reduces image size)
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        glusterfs-server \
+        rsync \
+        inotify-tools && \
+    rm -rf /var/lib/apt/list/*
+
+#Copy entrypont script
+
+COPY entrypoint.sh  /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh 
+
+#Start gluster 
+
+ENTRYPOINT [ "/entrypoint.sh" ]

@@ -1,0 +1,24 @@
+FROM ubuntu:20.04
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        glusterfs-client \
+        curl \
+        unzip \
+        inotify-tools && \
+    rm -rf /var/lib/apt/lists/*
+
+
+#Install AWS CLI v2
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip aws/
+
+#Copy entrypoint script
+
+COPY s3sync-entrypoint.sh /s3sync-entrypoint.sh
+
+RUN chmod +x /s3sync-entrypoint.sh 
+
+ENTRYPOINT [ "/s3sync-entrypoint.sh" ]
