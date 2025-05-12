@@ -1,4 +1,1 @@
-
-```markdown
-![Flow](/flow/flow.png "")
-```
+![Flow](flow/flow.png "Flow Diagram")
